@@ -1,0 +1,13 @@
+Package: skyspline
+Type: Package
+Title: Phylodynamic inference of population size and reproduction numbers
+Version: 0.1
+Date: 2016-09-20
+Author: Erik M Volz
+Maintainer: Erik M Volz <erik.volz@gmail.com>
+Description: Phylodynamic inference of epidemic population size and reproduction numbers given time scaled pathogen phylogenies. This package supports standard coalescent models and multi-scale coalescent models that account for within-host evolution. Methods are provided for simulating trees. Estimation of standard errors can be accomplished by likelihood profiling or parametric bootstrap. 
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.6)
+LinkingTo: Rcpp, RcppArmadillo, BH
+Depends: ape, deSolve, akima, ggplot2, mvtnorm
+
