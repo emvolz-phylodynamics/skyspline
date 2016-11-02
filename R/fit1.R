@@ -19,7 +19,6 @@
 }
 
 #ML version
-# TODO trace option
 fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
   , t0
   , death_rate_guess 
@@ -29,6 +28,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
   , y0_guess = NA
   , np_range = NULL
   , priors = list() # named list of functions ln.d(x) 
+  , trace =FALSE
   , ... # passed to likelihood
 ){
 	if (class(bdts)[1]=='DatedTree'){
@@ -108,7 +108,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			  , maxk=10
 			  , ...
 			)
-		#print(c(exp=exp(x), -rv))
+		if (trace) print(c(exp=exp(x), -rv))
 		rv - ln.dprior(x)
 	}
 	
@@ -123,7 +123,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			  , t0 = t0
 			  , ...
 			)
-		#print(c(exp=exp(x), -rv))
+		if (trace) print(c(exp=exp(x), -rv))
 		rv - ln.dprior(x)
 	}
 		
@@ -139,7 +139,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	 , fn = of
 	 , ...
 	 , method='Nelder-Mead'
-	 , control = list( reltol = 1e-6, trace=0)
+	 , control = list( reltol = 1e-6, trace=trace)
 	)
 	fit1 <- NA
 	.dm <- dm

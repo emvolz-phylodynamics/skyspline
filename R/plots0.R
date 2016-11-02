@@ -100,3 +100,18 @@ plot.mcmc.cumulative.births <- function(omh, t0, t1, burnin_percent = 20, sample
 	}
 	qp
 }
+
+
+
+plot.pbfit <- function (pbfit,log = TRUE, ...) 
+{
+    Yq <- t(pbfit$population_size)
+    t <- pbfit$times
+    yplot <- qplot(t, Yq[, 1], xlab = "Time", ylab = "Population size", 
+        geom = "path", ...) + geom_ribbon(aes(x = t, ymin = Yq[, 
+        2], ymax = Yq[, 3]), fill = "blue", alpha = 0.15)
+    if (log) {
+        yplot <- yplot + scale_y_log10()
+    }
+    yplot
+}
