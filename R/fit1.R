@@ -278,7 +278,11 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 	Ys <- c()
 	Rs <- c()
 	require(mvtnorm)
-	mpar <- fit$par[-which(names(fit$par)=='gamma')]
+	if ('gamma' %in% names( fit$par )){
+		mpar <- fit$par[-which(names(fit$par) == "gamma")]
+	} else{
+		mpar <- fit$par 
+	}
 	rmvnorm_theta <- rmvnorm(nreps, mean = mpar, sigma =vcv) #NOTE fit$par may include gamma
 	if (any(is.na(rmvnorm_theta))){
 		rmvnorm_theta <- rmvnorm(nreps, mean = mpar, sigma =diag(diag(vcv))) #NOTE fit$par may include gamma
