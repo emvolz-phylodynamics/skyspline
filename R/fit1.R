@@ -20,8 +20,8 @@
 
 #ML version
 fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
-  , t0
   , death_rate_guess 
+  , t0 = 0
   , R0guess = 2
   , cotype=c('com12', 'mscom')
   , Ne_guess = NA
@@ -33,7 +33,19 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 ){
 	if (class(bdts)[1]=='DatedTree'){
 		bdt = bdts
-	} else if (class(bdts)[1]=='list'){
+	} else if(class(bdts)[1]=='phylo'){
+		n <- length(bdts$tip.label)
+		x <- setNames( dist.nodes( bdts)[ (n+1), 1:n ], bdts$tip.label )
+		bdt = bdts <- DatedTree( bdts, x )
+	}else if (class(bdts)[1]=='list'){
+		for (k in 1:length(bdts)){
+			bdt <- bdts[[k]]
+			if(class(bdt)=='phylo'){
+				n <- length(bdt$tip.label)
+				x <- setNames( dist.nodes( bdt)[ (n+1), 1:n ], bdt$tip.label)
+				bdts[[k]] <- DatedTree( bdt, x )
+			}
+		}
 		bdt <- bdts[[1]]
 	} else{
 		stop('bdts must be DatedTree or list of DatedTree')
@@ -50,6 +62,8 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 		dm <- gen.demo.model3( t0, bdt, npoints = np)
 	}
 	sp_start <- .gen.start.splinePoint.parms(np)
+	
+	if (!('R0'%in% names(priors))) priors[[length(priors)+1]] <- function(x) dexp( x, R0guess/2, log=T)
 	
 	if (is.na(y0_guess)) y0_guess <- 1
 	if (is.na(Ne_guess)) Ne_guess <- 1 / death_rate_guess
@@ -84,7 +98,8 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			}
 			if ('R0' %in% names(priors)){
 				avals <- exp( x[grepl('akima', names(x))] )
-				R0s <- avals / exp( x['lngamma'] )
+				g <- ifelse( 'lngamma' %in% names(x), exp(x['lngamma']), death_rate_guess)
+				R0s <- avals / g
 				lnd <- lnd + sum(sapply(R0s, function(R0) priors$R0(R0) )) 
 			}
 			if ('death_rate' %in% names(priors)){
@@ -461,11 +476,11 @@ skyspline.metrop.hastings3 =  skyspline.metrop.hastings<- function(
 			print( theta)
 			print(.theta)
 			cat( 'likelihood\n')
-			print(c(o, .o))
+			print(unname(c(o, .o)))
 			cat('prior\n')
-			print(c(oprior, .oprior))
+			print(unname(c(oprior, .oprior)))
 			cat('objective\n')
-			print(c(ofval, .ofval))
+			print(unname(c(ofval, .ofval)))
 			cat('acceptance probability\n')
 			print(nAccept / istep)
 			cat('################################################\n\n')

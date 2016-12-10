@@ -1,4 +1,6 @@
-
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set( warning=FALSE, message=FALSE)
+```
 
 # skyspline
 
@@ -18,58 +20,30 @@ We demonstrate skysplines using a simulated genealogy from a stochastic HIV epid
 
 ## Maximum likelihood
 Load the tree
-
-```r
+```{r}
 require(skyspline)
 (tre <- readRDS( system.file( 'extdata', 'demo.skyspline.hiv0.bdt.rds', package='skyspline') ))
 ```
-
-```
-## 
-## Phylogenetic tree with 108 tips and 107 internal nodes.
-## 
-## Tip labels:
-## 	15138_2, 13989_2, 11368_2, 14459_2, 14333_2, 14959_2, ...
-## 
-## Rooted; includes branch lengths.
-```
 Let's see what it looks like
-
-```r
+```{r}
 plot( tre , show.tip =F)
 ```
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png)
-
 We must have some prior knowledge about HIV death rates. Suppose the following: 
-
-```r
+```{r}
 GAMMA <- 1/10 
 ```
 e.g. the infectious period lasts 10 years on average. 
 
 Fitting my maximum likelihood is accomplished using the following
-
-```r
+```{r}
 fit <- fit.skyspline.ml( tre 
   , death_rate_guess = GAMMA
   , R0guess = 2
 )
-```
 
-```
-## number splines points 1 rejected... incrementing...
-## number splines points 2 rejected... incrementing...
-## number splines points 3 rejected... incrementing...
-## Number of spline points: 
-## [1] 4
-```
-
-```r
 with( fit$demo.history, plot( times, pop.size, log = 'y', type = 'l' ))
 ```
-
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png)
 Note that we can also fit by maximimum a posteriori by specifing a list of priors for `R0` or `death_rate` or `lny0` (the initial log population size). If a prior is specified for `death_rate`, then that parameter will also be estimated, such as in the following:
 ```
 fit <- fit.skyspline.ml( tre 
@@ -87,24 +61,15 @@ To estimate confidence intervals, we can use a parametric bootstrap approach
 pbfit <- parboot.skyspline.mle(fit, nreps = 1e2)
 ```
 This will take a couple minutes, so let's load the results
-
-```r
+```{r}
 pbfit <- readRDS( system.file( 'extdata', 'demo.skyspline.hiv0.pbfit.rds', package='skyspline') )
 ```
 
 Now we can visualise the results
-
-```r
+```{r}
 plot.pbfit( pbfit, type = 'size' )
-```
-
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
-
-```r
 plot.pbfit( pbfit, type = 'R' )
 ```
-
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-2.png)
 
 
 
@@ -130,29 +95,19 @@ skyspline.metrop.hastings(
 ) -> fitmh
 ```
 This takes a while, so load the results:
-
-```r
+```{r}
 fitmh <- readRDS( system.file( 'extdata', 'demo.skyspline.hiv0.omh.rds', package='skyspline') )
 ```
 
 `fitmh$theta` contains a trace of the Markov chain. We can visualise the results using the following.
 For these plotting functions, we must specify the start and end points of the time axis. 
-
-```r
+```{r}
 plot.mcmc.R.t( fitmh, t0=0, t1=60 )
-```
-
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png)
-
-```r
 plot.mcmc.population.size( fitmh , t0=0, t1=60 )
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png)
-
 Note that in this example, the Markov chain was very short and effective sample sizes were low. 
 Differences between this Bayesian fit and the parametric bootstrap are due both to the priors and that the Bayesian fit is not converged. You can use diagnostic tools like `effectiveSize` in the `coda` package. 
-
 
 # Alternative coalescent models
 A 'multi-scale' coalescent model is also included in this package, which allows you to estimate or specify a within-host effective population size. 

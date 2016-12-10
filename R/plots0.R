@@ -103,11 +103,18 @@ plot.mcmc.cumulative.births <- function(omh, t0, t1, burnin_percent = 20, sample
 
 
 
-plot.pbfit <- function (pbfit,log = TRUE, ...) 
+plot.pbfit <- function (pbfit
+ , type = c('size', 'R')
+ , log = TRUE, ...) 
 {
-    Yq <- t(pbfit$population_size)
+	ylab <- ifelse( type == 'size', 'Population size(t)', 'R(t)' )
+	if (type == 'size'){
+		Yq <- t(pbfit$population_size)
+	} else if (type == 'R'){
+		Yq <- t(pbfit$R.t)
+	}
     t <- pbfit$times
-    yplot <- qplot(t, Yq[, 1], xlab = "Time", ylab = "Population size", 
+    yplot <- qplot(t, Yq[, 1], xlab = "Time", ylab = ylab, 
         geom = "path", ...) + geom_ribbon(aes(x = t, ymin = Yq[, 
         2], ymax = Yq[, 3]), fill = "blue", alpha = 0.15)
     if (log) {
