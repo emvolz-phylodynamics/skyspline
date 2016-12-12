@@ -292,6 +292,7 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 	## traj
 	Ys <- c()
 	Rs <- c()
+	cumF <- c()
 	require(mvtnorm)
 	if ('gamma' %in% names( fit$par )){
 		mpar <- fit$par[-which(names(fit$par) == "gamma")]
@@ -319,11 +320,16 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 			Rs <- cbind(Rs, tfgy$f / tfgy$y / fit$death_rate_guess ) 
 		}
 		times <- tfgy$t
+		tstep <- abs(times[1] - times[2] )
+		cumF <- cbind( cumF 
+		 , rev( cumsum(tstep * rev(tfgy$f)))
+		)
 	}
 #~ browser()
 	list( CIs = CIs
 	 , population_size = sapply( 1:nrow(Ys), function(k) quantile( Ys[k,], probs = c(.5, .025, .975) ) )
 	 , R.t = sapply( 1:nrow(Rs), function(k) quantile( Rs[k,], probs = c(.5, .025, .975) ) )
+	 , cumulative_births = sapply( 1:nrow(cumF), function(k) quantile( cumF[k,], probs = c(.5, .025, .975) ) )
 	 , times = times
 	)
 }

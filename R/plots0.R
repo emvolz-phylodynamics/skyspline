@@ -104,14 +104,21 @@ plot.mcmc.cumulative.births <- function(omh, t0, t1, burnin_percent = 20, sample
 
 
 plot.pbfit <- function (pbfit
- , type = c('size', 'R')
+ , type = c('size', 'R', 'cumulative')
  , log = TRUE, ...) 
 {
 	ylab <- ifelse( type == 'size', 'Population size(t)', 'R(t)' )
+	ylab <- switch( type
+	 , size = 'Population size(t)'
+	 , R  = 'R(t)'
+	 , cumulative = 'Cumulative(t)'
+	)
 	if (type == 'size'){
 		Yq <- t(pbfit$population_size)
 	} else if (type == 'R'){
 		Yq <- t(pbfit$R.t)
+	} else if ( type == 'cumulative'){
+		Yq <- t( pbfit$cumulative_births)
 	}
     t <- pbfit$times
     yplot <- qplot(t, Yq[, 1], xlab = "Time", ylab = ylab, 
