@@ -33,21 +33,23 @@ gen.demo.model3 <- function( t0, bdt, npoints = 5, model_gamma = NA)
 {
 	#print(splinePoints)
 	splineNames <- paste( 'akima', 1:npoints, sep='')
-	function( theta, x0, t0, t1, res = 1000)
+	function( theta, x0, t0, t1, res = 1000, tfin = NULL)
 	{
 		# reqd parameters akima1...akima_npoints, gamma
-		times <- seq(t0, t1, length.out = res)
+		tfin <- ifelse(is.null(tfin), t1, tfin )
+		times <- seq(t0, tfin, length.out = res)
 		
 		sps <- .spline.points( theta, t0, t1 )
 		if (length(sps)==1){
 			betas <- rep( exp(theta[splineNames]), length(times))
 		} else {
 			betas <- exp(aspline( sps, theta[splineNames], xout = times  )$y)
+			betas[ times > t1 ] <- exp( tail( theta[splineNames] ,1 ) )
 		}
 		if (!is.na(model_gamma)) {
-			y <- as.vector( solve_semiPar0( t0, t1, res, x0[1], betas, model_gamma ))
+			y <- as.vector( solve_semiPar0( t0, max(t1,tfin), res, x0[1], betas, model_gamma ))
 		} else if (!is.na(theta['gamma'])) {
-			y <- as.vector( solve_semiPar0( t0, t1, res, x0[1], betas, theta['gamma'] ))
+			y <- as.vector( solve_semiPar0( t0, max(t1,tfin), res, x0[1], betas, theta['gamma'] ))
 		} else{
 			stop('model_gamma or theta[gamma] must be defined')
 		}

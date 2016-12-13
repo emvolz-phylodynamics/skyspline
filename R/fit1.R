@@ -154,7 +154,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	 , fn = of
 	 , ...
 	 , method='Nelder-Mead'
-	 , control = list( reltol = 1e-6, trace=trace)
+	 , control = list( reltol = 1e-6, trace=trace, maxit = 1e3)
 	)
 	fit1 <- NA
 	.dm <- dm
@@ -196,7 +196,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			 , fn = of
 			 , ...
 			 , method='Nelder-Mead'
-			 , control = list( reltol = 1e-6, trace=0)
+			 , control = list( reltol = 1e-6, trace=0, maxit=1e3)
 			)
 		if ( !.lrt.accept.h1(fit0, fit1) ) {
 			done <- TRUE
@@ -216,11 +216,13 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	} else{
 		death_rate <- death_rate_guess
 	}
-	tfgy <- .dm(x, y0, t0, bdt$maxSampleTime, res = 1e2) 
+	tfgy <- tryCatch( {.dm(x, y0, t0, bdt$maxSampleTime, res = 1e2) }, error = function(e) browser() )
+	demo.history <- tryCatch( data.frame(times = tfgy$times, pop.size=tfgy$y, reproduction.number= tfgy$f / death_rate/ tfgy$y)
+	 , error = function(e) NA )
 	list( fit = fit0 
 	 , par = x
 	 , demo.model = .dm 
-	 , demo.history = data.frame(times = tfgy$times, pop.size=tfgy$y, reproduction.number= tfgy$f / death_rate/ tfgy$y)
+	 , demo.history = demo.history
 	 , Ne = ifelse( 'lnNe' %in% names(fit0$par) , unname(exp(fit0$par['lnNe'] )), NA)  
 	 , numberSplinePoints = np - 1
 	 , bdts = bdts
@@ -237,7 +239,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	)
 }
 
-parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
+parboot.skyspline.mle <- function(fit, nreps = 2e2, tfin = NULL, ...)
 {
 	x0 <- unname(exp(fit$fit$par['lny0']))
 	if (fit$est_death_rate){
@@ -267,7 +269,7 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 			)
 		}, error = function(e) NA)
 		if (!any(is.na(sbdt))){
-			.fit <- fit.skyspline.mle3(sbdt
+			.fit <- tryCatch({ fit.skyspline.mle3(sbdt
 			  , t0
 			  , death_rate_guess = fit$death_rate_guess
 			  , R0guess = fit$R0guess
@@ -277,6 +279,7 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 			  , np_range = fit$numberSplinePoints
 			  , priors = fit$priors
 			  , ... # passed to likelihood
+			)}, error = function(e) list(fit=list(par=NULL)) #list(fit=list(par=rep(NA, ncol(theta))))
 			)
 			theta <- rbind( theta, .fit$fit$par )
 		}
@@ -312,7 +315,7 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 			.theta <- c( .theta, gamma = unname(exp( .theta['lngamma'])))
 		} 
 		.x0 <- unname( exp( .theta['lny0']))
-		tfgy <- fit$demo.model( .theta, .x0, t0, fit$bdt$maxSampleTime , res = 1e2)
+		tfgy <- fit$demo.model( .theta, .x0, t0, fit$bdt$maxSampleTime , res = 1e2, tfin = tfin)
 		Ys <- cbind( Ys, tfgy$y )
 		if (fit$est_death_rate){
 			Rs <- cbind(Rs, tfgy$f / tfgy$y / .theta['gamma']  ) 
@@ -325,12 +328,13 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, ...)
 		 , rev( cumsum(tstep * rev(tfgy$f)))
 		)
 	}
-#~ browser()
 	list( CIs = CIs
 	 , population_size = sapply( 1:nrow(Ys), function(k) quantile( Ys[k,], probs = c(.5, .025, .975) ) )
 	 , R.t = sapply( 1:nrow(Rs), function(k) quantile( Rs[k,], probs = c(.5, .025, .975) ) )
 	 , cumulative_births = sapply( 1:nrow(cumF), function(k) quantile( cumF[k,], probs = c(.5, .025, .975) ) )
 	 , times = times
+	 , VCV = vcv
+	 , theta = rmvnorm_theta
 	)
 }
 #######################################
