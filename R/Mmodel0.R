@@ -496,8 +496,8 @@ colik <- function(trees
   , demographic.process.model, x0, t0, res = 1e3
   , timeOfOriginBoundaryCondition = TRUE
   , maxHeight = Inf 
-  , forgiveAgtY = 1 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
-  , AgtY_penalty = 1 # penalises likelihood if A > Y
+  , forgiveAgtY = .2 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
+  , AgtY_penalty = 10 # penalises likelihood if A > Y
 ) {
 	if (class(trees)[1]=='DatedTree'){
 		tree <- trees
