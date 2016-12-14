@@ -329,9 +329,9 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, tfin = NULL, ...)
 		)
 	}
 	list( CIs = CIs
-	 , population_size = sapply( 1:nrow(Ys), function(k) quantile( Ys[k,], probs = c(.5, .025, .975) ) )
-	 , R.t = sapply( 1:nrow(Rs), function(k) quantile( Rs[k,], probs = c(.5, .025, .975) ) )
-	 , cumulative_births = sapply( 1:nrow(cumF), function(k) quantile( cumF[k,], probs = c(.5, .025, .975) ) )
+	 , population_size = sapply( 1:nrow(Ys), function(k) quantile( Ys[k,], probs = c(.5, .025, .975) , na.rm=T) )
+	 , R.t = sapply( 1:nrow(Rs), function(k) quantile( Rs[k,], probs = c(.5, .025, .975) , na.rm=T) )
+	 , cumulative_births = sapply( 1:nrow(cumF), function(k) quantile( cumF[k,], probs = c(.5, .025, .975) , na.rm=T) )
 	 , times = times
 	 , VCV = vcv
 	 , theta = rmvnorm_theta
