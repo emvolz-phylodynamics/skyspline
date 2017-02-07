@@ -104,7 +104,7 @@ plot.mcmc.cumulative.births <- function(omh, t0, t1, burnin_percent = 20, sample
 
 
 plot.pbfit <- function (pbfit
- , type = c('size', 'R', 'cumulative')
+ , type = 'size' #c('size', 'R', 'cumulative')
  , log = TRUE, ...) 
 {
 	ylab <- ifelse( type == 'size', 'Population size(t)', 'R(t)' )

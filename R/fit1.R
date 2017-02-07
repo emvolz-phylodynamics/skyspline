@@ -23,7 +23,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
   , death_rate_guess 
   , t0 = 0
   , R0guess = 2
-  , cotype=c('com12', 'mscom')
+  , cotype= 'com12' #c('com12', 'mscom')
   , Ne_guess = NA
   , y0_guess = NA
   , np_range = NULL
@@ -74,14 +74,14 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 		theta_start <- c( setNames( rep(a_start , np ), anames) 
 		 , sp_start
 		 , lnNe = log(Ne_guess)
-		 , lny0 = log(1)
+		 , lny0 = log(y0_guess)
 		)
 	} else if( cotype == 'com12'){
 		a_start <- log( R0guess * death_rate_guess )
 		anames <- paste( sep='', 'akima', 1:np)
 		theta_start <- c( setNames( rep(a_start , np ), anames) 
 		 , sp_start
-		 , lny0 = log(1)
+		 , lny0 = log(y0_guess)
 		)
 	}
 	if (est_death_rate){
@@ -196,7 +196,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			 , fn = of
 			 , ...
 			 , method='Nelder-Mead'
-			 , control = list( reltol = 1e-6, trace=0, maxit=1e3)
+			 , control = list( reltol = 1e-6, trace=trace, maxit=1e3)
 			)
 		if ( !.lrt.accept.h1(fit0, fit1) ) {
 			done <- TRUE
@@ -274,10 +274,11 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, tfin = NULL, ...)
 			  , death_rate_guess = fit$death_rate_guess
 			  , R0guess = fit$R0guess
 			  , cotype=fit$cotype
-			  , Ne_guess = fit$y0_guess
+			  , Ne_guess = fit$Ne_guess
 			  , y0_guess = fit$y0_guess
 			  , np_range = fit$numberSplinePoints
 			  , priors = fit$priors
+			  , forgiveAgtY = 1  # NOTE want to avoid convergence problems so forgiving all violations
 			  , ... # passed to likelihood
 			)}, error = function(e) list(fit=list(par=NULL)) #list(fit=list(par=rep(NA, ncol(theta))))
 			)
@@ -285,7 +286,6 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, tfin = NULL, ...)
 		}
 		print( paste( 'rep', k, 'complete', date()))
 	}
-	
 	vcv <- cov( theta )
 	CIs <- setNames( lapply( colnames(theta), function(pn){
 		dx <- sqrt( vcv[pn,pn] ) * 1.96

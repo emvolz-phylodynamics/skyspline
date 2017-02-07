@@ -496,7 +496,7 @@ colik <- function(trees
   , demographic.process.model, x0, t0, res = 1e3
   , timeOfOriginBoundaryCondition = TRUE
   , maxHeight = Inf 
-  , forgiveAgtY = .2 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
+  , forgiveAgtY = 1 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
   , AgtY_penalty = 10 # penalises likelihood if A > Y
 ) {
 	if (class(trees)[1]=='DatedTree'){
@@ -535,7 +535,7 @@ colik.tfgy  <- function(tree
   , timeOfOriginBoundaryCondition = TRUE
   , maxHeight = Inf 
   , forgiveAgtY = 1 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
-  , AgtY_penalty = 1 # penalises likelihood if A > Y
+  , AgtY_penalty = 10 # penalises likelihood if A > Y
 ) 
 {
 	# NOTE tfgy needs to be in order of decreasing time, fist time point must correspond to most recent sample
