@@ -143,7 +143,7 @@ colik.mscom <- function(trees
   , timeOfOriginBoundaryCondition = TRUE
   , maxHeight = Inf 
   , forgiveAgtY = 1 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
-  , AgtY_penalty = 1 # penalises likelihood if A > Y
+  , AgtY_penalty = 10 # penalises likelihood if A > Y
   , returnTree = FALSE
   , logd.sim.prior = NULL #function(tfgy, theta)
 ) {
@@ -176,7 +176,7 @@ colik.mscom.tfgy <- function(tree
   , res = 1e3
   , timeOfOriginBoundaryCondition = TRUE
   , maxHeight = Inf 
-  , forgiveAgtY = .2 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
+  , forgiveAgtY = 1 #can be NA; if 0 returns -Inf if A > Y; if 1, allows A>Y everywhere
   , AgtY_penalty = 10 # penalises likelihood if A > Y
   , returnTree = FALSE
   , logd.sim.prior = NULL #function(tfgy, theta)

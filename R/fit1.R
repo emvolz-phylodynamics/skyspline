@@ -121,6 +121,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			  , t0 = t0
 			  , Ne = Ne
 			  , maxk=10
+			  , forgiveAgtY=1
 			  , ...
 			)
 		if (trace) print(c(exp=exp(x), -rv))
@@ -136,6 +137,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			  , dm
 			  , y0
 			  , t0 = t0
+			  , forgiveAgtY=1
 			  , ...
 			)
 		if (trace) print(c(exp=exp(x), -rv))
@@ -278,15 +280,14 @@ parboot.skyspline.mle <- function(fit, nreps = 2e2, tfin = NULL, ...)
 			  , y0_guess = fit$y0_guess
 			  , np_range = fit$numberSplinePoints
 			  , priors = fit$priors
-			  , forgiveAgtY = 1  # NOTE want to avoid convergence problems so forgiving all violations
 			  , ... # passed to likelihood
 			)}, error = function(e) list(fit=list(par=NULL)) #list(fit=list(par=rep(NA, ncol(theta))))
 			)
 			theta <- rbind( theta, .fit$fit$par )
 		}
-		print( paste( 'rep', k, 'complete', date()))
+		print( paste( 'rep', k, 'complete', Sys.time()))
 	}
-	vcv <- cov( theta )
+	vcv <- tryCatch( cov( theta ), error = function(e) sapply( 1:ncol(theta), function(kk) var(theta[,kk], na.rm=T) ))
 	CIs <- setNames( lapply( colnames(theta), function(pn){
 		dx <- sqrt( vcv[pn,pn] ) * 1.96
 		c( fit$fit$par[pn] - dx, fit$fit$par[pn] + dx )
@@ -355,7 +356,7 @@ skyspline.metrop.hastings3 =  skyspline.metrop.hastings<- function(
 	  , Ne_logprior = function(x) 0# log(1/x)
 	  , y0_logprior = function(x) dexp(1, rate=1, log = T)
 	  , splinePoint_logprior = function(x) dbeta(x, 2,2,log=TRUE)
-	  , cotype=c('com12', 'mscom')
+	  , cotype='com12'#c('com12', 'mscom')
 	  , numberSplinePoints = 4
 	  , t0 = 0
 	  , reportFreq = 100
