@@ -19,9 +19,9 @@
 }
 
 #ML version
-fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
+skyspline = fit.skyspline.ml <- function(bdts
   , death_rate_guess 
-  , t0 = 0
+  , t0 = NA
   , R0guess = 2
   , cotype= 'com12' #c('com12', 'mscom')
   , Ne_guess = NA
@@ -29,14 +29,17 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
   , np_range = NULL
   , priors = list() # named list of functions ln.d(x) 
   , trace =FALSE
+  , hessian=TRUE
   , ... # passed to likelihood
 ){
 	if (class(bdts)[1]=='DatedTree'){
-		bdt = bdts
+		bdt <- bdts
+		bdts <- list( bdt )
 	} else if(class(bdts)[1]=='phylo'){
 		n <- length(bdts$tip.label)
 		x <- setNames( dist.nodes( bdts)[ (n+1), 1:n ], bdts$tip.label )
-		bdt = bdts <- DatedTree( bdts, x )
+		bdt <- DatedTree( bdts, x )
+		bdts <- list( bdt) 
 	}else if (class(bdts)[1]=='list'){
 		for (k in 1:length(bdts)){
 			bdt <- bdts[[k]]
@@ -49,6 +52,9 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 		bdt <- bdts[[1]]
 	} else{
 		stop('bdts must be DatedTree or list of DatedTree')
+	}
+	if (is.na(t0)){
+		t0 <- min( sapply( bdts, function(bdt) bdt$maxSampleTime - bdt$maxHeight) )
 	}
 	if (is.null(np_range)){
 		np_range <- c(1,Inf)
@@ -63,7 +69,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	}
 	sp_start <- .gen.start.splinePoint.parms(np)
 	
-	if (!('R0'%in% names(priors))) priors[[length(priors)+1]] <- function(x) dexp( x, R0guess/2, log=T)
+	#if (!('R0'%in% names(priors))) priors$R0 <- function(x) dexp( x, R0guess/2, log=T)
 	
 	if (is.na(y0_guess)) y0_guess <- 1
 	if (is.na(Ne_guess)) Ne_guess <- 1 / death_rate_guess
@@ -208,6 +214,15 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 			if  ((np+1) > tail(np_range,1) ){ done <- TRUE}
 		}
 	}
+	
+	# final optimstep
+	fit0 <- optim( fit0$par, of, method='BFGS', hessian=TRUE)
+	H <- fit0$hessian
+	.vcov <- tryCatch( {solve(H)}
+	 , error = function(e) NA ) # TODO bad approx
+	.vcov <-  (.vcov + t(.vcov)) / 2
+	.sd <- sqrt( abs(diag( .vcov)) )
+	
 	cat('Number of spline points: \n')
 	print(np-1)
 	y0 <- exp( fit0$par['lny0'])
@@ -224,6 +239,7 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	list( fit = fit0 
 	 , par = x
 	 , demo.model = .dm 
+	 , dm = .dm
 	 , demo.history = demo.history
 	 , Ne = ifelse( 'lnNe' %in% names(fit0$par) , unname(exp(fit0$par['lnNe'] )), NA)  
 	 , numberSplinePoints = np - 1
@@ -237,7 +253,61 @@ fit.skyspline.mle3 = fit.skyspline.ml <- function(bdts
 	 , y0_guess = y0_guess
 	 , priors = priors
 	 , est_death_rate = est_death_rate
-	 #, additional_parameters = ... 
+	 , ln.dprior = ln.dprior
+	 , objFun = of
+	 , of = of
+	 , vcov = .vcov
+	 , sd = .sd
+	 , hessian = H
+	 , loglik = -fit0$value
+	)
+}
+
+parboot.skyspline = parboot.skyspline.mle2 <- function(fit, nreps = 1e2, tfin = NULL, ...)
+{
+	theta <- fit$par
+	CIs <- setNames( lapply( names(theta), function(pn){
+		c( theta[pn] - fit$sd*1.96, theta[pn] + fit$sd*1.96 )
+	}), names( theta ))
+	
+	## traj
+	Ys <- c()
+	Rs <- c()
+	cumF <- c()
+	require(mvtnorm)
+	rmvnorm_theta <- rmvnorm(nreps, mean = theta, sigma =fit$vcov) #NOTE fit$par may include gamma
+	if (any(is.na(rmvnorm_theta))){
+		rmvnorm_theta <- rmvnorm(nreps, mean = theta, sigma =diag(diag(fit$vcov))) #NOTE fit$par may include gamma
+	}
+	if (any(is.na(rmvnorm_theta))){
+		stop('Parboot failed; NA values in fit.')
+	}
+	for (k in 1:nreps){
+		.theta <- setNames( rmvnorm_theta[k, ], names(theta))
+		if (fit$est_death_rate){
+			.theta <- c( .theta, gamma = unname(exp( .theta['lngamma'])))
+		} 
+		.x0 <- unname( exp( .theta['lny0']))
+		tfgy <- fit$demo.model( .theta, .x0, fit$t0, fit$bdt$maxSampleTime , res = 1e2, tfin = tfin)
+		Ys <- cbind( Ys, tfgy$y )
+		if (fit$est_death_rate){
+			Rs <- cbind(Rs, tfgy$f / tfgy$y / .theta['gamma']  ) 
+		} else{
+			Rs <- cbind(Rs, tfgy$f / tfgy$y / fit$death_rate_guess ) 
+		}
+		times <- tfgy$t
+		tstep <- abs(times[1] - times[2] )
+		cumF <- cbind( cumF 
+		 , rev( cumsum(tstep * rev(tfgy$f)))
+		)
+	}
+	list( CIs = CIs
+	 , population_size = sapply( 1:nrow(Ys), function(k) quantile( Ys[k,], probs = c(.5, .025, .975) , na.rm=T) )
+	 , R.t = sapply( 1:nrow(Rs), function(k) quantile( Rs[k,], probs = c(.5, .025, .975) , na.rm=T) )
+	 , cumulative_births = sapply( 1:nrow(cumF), function(k) quantile( cumF[k,], probs = c(.5, .025, .975) , na.rm=T) )
+	 , times = times
+	 , VCV = fit$vcov
+	 , theta = rmvnorm_theta
 	)
 }
 
