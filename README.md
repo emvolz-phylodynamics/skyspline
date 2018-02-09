@@ -11,6 +11,9 @@ This package includes functions for semi-parametric inference of population size
 
 The data should take the form of a time-scaled phylogeny or multiple phylogenies. For estimation of birth-rates, it is important to also have prior knowledge of the death or removal rate. This can be a fixed value or it can be specified as a prior distribution. 
 
+## To cite 
+Erik Volz, Ethan Romero-Severson, and Thomas Leitner, [Phylodynamic inference across epidemic scales](https://doi.org/10.1093/molbev/msx077), Molecular Biology and Evolution, 2017
+
 # Example usage
 
 We demonstrate skysplines using a simulated genealogy from a stochastic HIV epidemic model. Each sampled lineage represents a single sampled patient who were sampled with 10% probability after 60 years. 
