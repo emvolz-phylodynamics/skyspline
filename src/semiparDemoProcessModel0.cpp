@@ -7,7 +7,7 @@
 
 static const double MINY = 1e-12;
 
-using namespace arma;
+//~ using namespace arma;
 using namespace Rcpp; 
 using namespace std; 
 using namespace boost::numeric::odeint;
@@ -15,7 +15,7 @@ using namespace boost::numeric::odeint;
 typedef std::vector<double> state_type; 
 
 // globals
-vec g_betas; 
+arma::vec g_betas; 
 double g_gamma;
 
 ////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ struct push_back_state_and_time
 
 //~ solve_semiPar0(times,x0[1], betas, theta['gamma'] )
 //[[Rcpp::export()]]
-vec solve_semiPar0( double t0, double t1, int res, double y0, vec betas, double gamma, double eps_abs=1.0e-10, double eps_rel =1.0e-6)
+arma::vec solve_semiPar0( double t0, double t1, int res, double y0, arma::vec betas, double gamma, double eps_abs=1.0e-10, double eps_rel =1.0e-6)
 {
 	::g_betas = betas; 
 	::g_gamma = gamma;
@@ -78,5 +78,5 @@ vec solve_semiPar0( double t0, double t1, int res, double y0, vec betas, double 
 	//~ o["y"] = wrap( Ys ) ;
 	//~ o["times"] = wrap( times );
 	//~ return o;
-	return vec(Ys);
+	return arma::vec(Ys);
 }
