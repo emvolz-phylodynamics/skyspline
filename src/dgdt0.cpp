@@ -15,14 +15,14 @@
 
 static const double MINY = 1e-12;
 
-using namespace arma;
+//~ using namespace arma;
 using namespace Rcpp; 
-using namespace std; 
+//~ using namespace std; 
 
 typedef std::vector<double> state_type; 
 
 // globals
-vec g_Fs, g_Ys; 
+arma::vec g_Fs, g_Ys; 
 double g_Ne; 
 double g_hres; 
 double g_treeT; 
@@ -35,10 +35,10 @@ double g_A;
 // this is same as Q for the p_uk, but includes extra decay with Ne
 class ODE_dgdt0{ 
 public: 
-	vec g0;
+	arma::vec g0;
 	double Lambda0; 
 public:
-	ODE_dgdt0(vec g0_, double Lambda0_) : g0(g0_),Lambda0(Lambda0_) {};
+	ODE_dgdt0(arma::vec g0_, double Lambda0_) : g0(g0_),Lambda0(Lambda0_) {};
 	void operator() ( const state_type &x , state_type &dxdt , double t)//, const double /* t */ )
 	{
 		int i_t =  (int)std::max(0., std::min( g_hres * t / g_treeT , (double)(g_hres-1.))); 
@@ -47,38 +47,38 @@ public:
 				
 		int k, i, j; 
 		
-		vec g2 = zeros<vec>(g_maxk); 
-		vec ug2 = zeros<vec>(g_maxk); 
+		arma::vec g2 = arma::zeros<arma::vec>(g_maxk); 
+		arma::vec ug2 = arma::zeros<arma::vec>(g_maxk); 
 		//~ vec g(x); //  not quite 
-		vec g = zeros<vec>(g_maxk); 
-		vec ug = zeros<vec>(g_maxk); 
+		arma::vec g = arma::zeros<arma::vec>(g_maxk); 
+		arma::vec ug = arma::zeros<arma::vec>(g_maxk); 
 		for (k = 1; k <= g_maxk; k++){
-			g(k-1) = max(0., x.at(k-1)); 
-			ug(k-1) = max(0., x.at(k-1)); 
+			g(k-1) = std::max(0., x.at(k-1)); 
+			ug(k-1) = std::max(0., x.at(k-1)); 
 		}
-		g = normalise( g, 1.);
+		g = arma::normalise( g, 1.);
 		// B= A / g'(1)
 		double m1 = 0.; 
 		for (k = 1; k <= g_maxk; k++){
 			m1 += g(k-1) * k; 
 		}
 		double B = g_A / m1;
-		//~ double B = min( g_A / m1, y);
+		//~ double B = std::min( g_A / m1, y);
 		
 		// (dg / dt) = (g2 - g) * B * f / Y2
 		for (i = 1; i <= g_maxk; i++){
 			for ( j = 1; j <= g_maxk; j++){
-				k = min( g_maxk, i + j); 
+				k = std::min( g_maxk, i + j); 
 				g2(k-1) += g(i-1)*g(j-1);
 				ug2(k-1) += ug(i-1)*ug(j-1);
 			}
 		}
 		
 		//~ double tr = B * f / (y*y);
-		double tr = max(0.,(B-1.)) * f / (y*y);
+		double tr = std::max(0.,(B-1.)) * f / (y*y);
 		for (k = 1; k <= g_maxk; k++){
 			if (x.at(k-1) < 0){
-				dxdt.at(k - 1)= max(0., (g2(k-1) - g(k-1)) * tr); // 
+				dxdt.at(k - 1)= std::max(0., (g2(k-1) - g(k-1)) * tr); // 
 			} else{
 				dxdt.at(k - 1)=  (g2(k-1) - g(k-1)) * tr; // 
 			}
@@ -105,8 +105,8 @@ public:
 	double get_Lambda(state_type x){
 		return x.at(i_Lambda());
 	}
-	vec get_g(state_type x){
-		vec g = zeros<vec>(g_maxk); 
+	arma::vec get_g(state_type x){
+		arma::vec g = arma::zeros<arma::vec>(g_maxk); 
 		for (int i = 0; i < g_maxk; i++){
 			g(i) = x.at(i); 
 		}
@@ -120,8 +120,8 @@ private:
 };
 
 //[[Rcpp::export()]]
-List solve_dgdt0(vec times, vec Fs, vec Ys
- , vec g0 // initial state vec
+List solve_dgdt0(arma::vec times, arma::vec Fs, arma::vec Ys
+ , arma::vec g0 // initial state vec
  , double Lambda0 // initial cum hazard
  , double h0
  , double h1
@@ -145,11 +145,11 @@ List solve_dgdt0(vec times, vec Fs, vec Ys
 	List o; 
 	o["Lambda"] = dgdt0.get_Lambda(x);
 	
-	vec g = dgdt0.get_g(x);
+	arma::vec g = dgdt0.get_g(x);
 	for (int k = 1; k <= g_maxk; k++){
-		g(k-1) = max(0., x.at(k-1)); 
+		g(k-1) = std::max(0., x.at(k-1)); 
 	}
-	g = normalise( g, 1.);
+	g = arma::normalise( g, 1.);
 	o["g"] = g;
 	return o; 
 }
@@ -183,7 +183,7 @@ public:
 };
 
 //[[Rcpp::export()]]
-double solve_CoM12L(vec times, vec Fs, vec Ys
+double solve_CoM12L(arma::vec times, arma::vec Fs, arma::vec Ys
  , double Lambda0 // initial cum hazard
  , double h0
  , double h1
